@@ -3,10 +3,10 @@ import { GoogleGenAI } from "@google/genai";
 import { Attempt } from '../types';
 
 const getAiInstance = () => {
-    if (!import.meta.env.VITE_API_KEY) {
+    if (!process.env.VITE_API_KEY) {
         throw new Error("VITE_API_KEY environment variable not set");
     }
-    return new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+    return new GoogleGenAI({ apiKey: process.env.VITE_API_KEY });
 };
 
 export const getAIFeedback = async (attempts: Attempt[]): Promise<string> => {
