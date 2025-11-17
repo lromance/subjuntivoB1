@@ -17,6 +17,8 @@ jobs:
           node-version: 20
       - run: npm install
       - run: npm run build
+        env:
+          GEMINI_API_KEY: ${{ secrets.API_KEY }}
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:
