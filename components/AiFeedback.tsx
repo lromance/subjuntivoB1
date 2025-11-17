@@ -3,53 +3,6 @@ import React from 'react';
 import { Attempt } from '../types';
 import Spinner from './Spinner';
 
-// Enhanced markdown to HTML converter with more comprehensive replacements
-const markdownToHtml = (text: string): string => {
-  let result = text;
-
-  // Convert strong/bold formatting: **text** to <strong>text</strong>
-  result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-  // Convert italic formatting: *text* to <em>text</em>
-  result = result.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-  // Convert horizontal rules
-  result = result.replace(/---/g, '<hr>');
-  result = result.replace(/===/g, '<hr>');
-
-  // Convert numbered list items with proper line breaks
-  result = result.replace(/(\d+)\.\s/g, '<br /><br />$1. ');
-
-  // Convert line breaks more systematically
-  result = result.replace(/\n/g, '<br />');
-
-  // Handle paragraph breaks (double line breaks)
-  result = result.replace(/<br \/><br \/>/g, '</p><p>');
-
-  return result;
-};
-
-// Wrap content in paragraph tags if needed
-const formatFeedback = (text: string): string => {
-  let formatted = markdownToHtml(text);
-
-  // Ensure the content is properly wrapped in paragraph tags
-  if (!formatted.includes('<p>')) {
-    // If no paragraph tags are present, wrap the entire content
-    formatted = `<p>${formatted}</p>`;
-  } else {
-    // If there are paragraph tags but not at the beginning/end, add them
-    if (!formatted.startsWith('<p>')) {
-      formatted = `<p>${formatted}`;
-    }
-    if (!formatted.endsWith('</p>')) {
-      formatted = `${formatted}</p>`;
-    }
-  }
-
-  return formatted;
-};
-
 interface AiFeedbackProps {
     onGetFeedback: () => void;
     feedback: string;
@@ -81,10 +34,9 @@ const AiFeedback: React.FC<AiFeedbackProps> = ({ onGetFeedback, feedback, isLoad
                         </svg>
                         Tutor IA: Diagnóstico de Errores
                     </p>
-                    <div
-                        className="text-gray-700 leading-relaxed whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: formatFeedback(feedback) }}
-                    />
+                    <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {feedback}
+                    </div>
                 </div>
             )}
         </div>
