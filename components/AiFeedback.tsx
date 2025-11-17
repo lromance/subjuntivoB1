@@ -3,32 +3,50 @@ import React from 'react';
 import { Attempt } from '../types';
 import Spinner from './Spinner';
 
-// Enhanced markdown to HTML converter
+// Enhanced markdown to HTML converter with more comprehensive replacements
 const markdownToHtml = (text: string): string => {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold: **text** -> <strong>text</strong>
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')             // Italic: *text* -> <em>text</em>
-    .replace(/---/g, '<hr>')                          // Horizontal rule
-    .replace(/===/g, '<hr>')                          // Horizontal rule
-    .replace(/\n\n/g, '</p><p>')                     // Paragraph breaks
-    .replace(/---\s*\n/g, '</p><hr><p>')             // Horizontal rule with following paragraph
-    .replace(/\n/g, '<br />')                        // Line breaks
-    .replace(/(\d+)\.\s/g, '<br />$1. ')             // Numbered list items
-    .replace(/^\s*([a-z]\.)\s/gm, '<br />$1 ');      // Lowercase lettered list items
+  let result = text;
+
+  // Convert strong/bold formatting: **text** to <strong>text</strong>
+  result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  // Convert italic formatting: *text* to <em>text</em>
+  result = result.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+  // Convert horizontal rules
+  result = result.replace(/---/g, '<hr>');
+  result = result.replace(/===/g, '<hr>');
+
+  // Convert numbered list items with proper line breaks
+  result = result.replace(/(\d+)\.\s/g, '<br /><br />$1. ');
+
+  // Convert line breaks more systematically
+  result = result.replace(/\n/g, '<br />');
+
+  // Handle paragraph breaks (double line breaks)
+  result = result.replace(/<br \/><br \/>/g, '</p><p>');
+
+  return result;
 };
 
 // Wrap content in paragraph tags if needed
 const formatFeedback = (text: string): string => {
   let formatted = markdownToHtml(text);
-  // Ensure we have proper paragraph wrapping
-  if (!formatted.startsWith('<p>')) {
-    formatted = `<p>${formatted}`;
+
+  // Ensure the content is properly wrapped in paragraph tags
+  if (!formatted.includes('<p>')) {
+    // If no paragraph tags are present, wrap the entire content
+    formatted = `<p>${formatted}</p>`;
+  } else {
+    // If there are paragraph tags but not at the beginning/end, add them
+    if (!formatted.startsWith('<p>')) {
+      formatted = `<p>${formatted}`;
+    }
+    if (!formatted.endsWith('</p>')) {
+      formatted = `${formatted}</p>`;
+    }
   }
-  if (!formatted.endsWith('</p>')) {
-    formatted = `${formatted}</p>`;
-  }
-  // Handle the case where we have multiple line breaks
-  formatted = formatted.replace(/<br \/><br \/>/g, '</p><p>');
+
   return formatted;
 };
 
