@@ -3,10 +3,16 @@ import { GoogleGenAI } from "@google/genai";
 import { Attempt } from '../types';
 
 const getAiInstance = () => {
-    if (!import.meta.env.VITE_API_KEY) {
-        throw new Error("VITE_API_KEY environment variable not set");
+    const API_KEY = import.meta.env.VITE_API_KEY;
+
+    if (!API_KEY) {
+        // Handle the case where API key is not available
+        console.error("API key is not set");
+        // Return null or throw error based on how you want to handle this case
+        return null;
+        // You could show an error message to the user or disable AI features
     }
-    return new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+    return new GoogleGenAI({ apiKey: API_KEY });
 };
 
 export const getAIFeedback = async (attempts: Attempt[]): Promise<string> => {
@@ -15,8 +21,11 @@ export const getAIFeedback = async (attempts: Attempt[]): Promise<string> => {
     if (errors.length === 0) {
         return '¡Genial! No hemos detectado errores recientes o no has corregido ningún ejercicio. ¡Sigue practicando!';
     }
-    
+
     const ai = getAiInstance();
+    if (!ai) {
+        return "La funcionalidad de inteligencia artificial no está disponible actualmente. Por favor, inténtalo más tarde.";
+    }
 
     let errorSummary = "Errores detectados en la práctica de Subjuntivo (con conjugaciones y contextos):\n\n";
     const errorsToSend = errors.slice(-10); // Limit to last 10 errors
@@ -50,6 +59,9 @@ export const getAIFeedback = async (attempts: Attempt[]): Promise<string> => {
 
 export const getTutorResponse = async (systemPrompt: string, userQuery: string, retries = 3): Promise<string> => {
     const ai = getAiInstance();
+    if (!ai) {
+        throw new Error("La funcionalidad de inteligencia artificial no está disponible actualmente. Por favor, inténtalo más tarde.");
+    }
 
     try {
         const response = await ai.models.generateContent({
