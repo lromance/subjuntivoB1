@@ -1,10 +1,9 @@
-
 import { questionBank, SUBJUNTIVO_MAP, INDICATIVO_MAP } from '../data/questions';
 import { Exercise, QuestionPool, ExerciseType } from '../types';
 
 const cleanAnswer = (answer: string | null | undefined): string => {
     if (!answer) return '';
-    return answer.toLowerCase().trim().normalize("NFD").replace(/[\u0000-\u036f]/g, "").replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"").replace(/\s+/g, '');
+    return answer.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"").replace(/\s+/g, '');
 };
 
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -51,10 +50,10 @@ const getRegularConjugation = (verb: string, personIndex: number, mode: 'subjunt
 const getConjugation = (verb: string, personIndex: number, mode: 'subjuntivo' | 'indicativo'): string | null => {
     const map = mode === 'subjuntivo' ? SUBJUNTIVO_MAP : INDICATIVO_MAP;
     if (map[verb]) return map[verb][personIndex];
-    
+
     const cleanVerb = verb.replace(/se$/, '').trim();
     if (map[cleanVerb]) return map[cleanVerb][personIndex];
-    
+
     return getRegularConjugation(cleanVerb, personIndex, mode);
 };
 
@@ -64,7 +63,7 @@ const getAllConjugations = (verb: string, mode: 'subjuntivo' | 'indicativo'): (s
 
     if (map[verb]) return map[verb];
     if (map[cleanVerb]) return map[cleanVerb];
-    
+
     return Array.from({ length: 6 }, (_, i) => getRegularConjugation(cleanVerb, i, mode));
 };
 
@@ -82,58 +81,75 @@ export const generateQuestions = (poolName: QuestionPool, count: number, type: E
         if (type === 'radio') {
             if (poolName === 'formaPura' || poolName === 'disparadores') {
                 const matches = ((q as any).verb || '').match(/\((.*?)\)/);
-                if (!matches) return { ...q, answer: finalAnswer, cleanedAnswer: cleanAnswer(finalAnswer), shuffledOptions: [] };
-
-                const parts = matches[1].split(',').map(p => p.trim());
-                const rawInfinitive = parts[parts.length - 1];
-                const infinitive = rawInfinitive.replace(/se$/, '').trim();
-                const pronoun = parts.length > 1 ? parts.slice(0, parts.length - 1).join(', ') : 'él';
-                const personIndex = getPersonIndex(pronoun);
-
-                const correctAnswer = getConjugation(rawInfinitive, personIndex, 'subjuntivo') || q.answer;
-                finalAnswer = correctAnswer;
-
-                let allFormsSet = new Set<string>();
-                getAllConjugations(infinitive, 'indicativo').forEach(f => { if(f) allFormsSet.add(f); });
-                getAllConjugations(infinitive, 'subjuntivo').forEach(f => { if(f) allFormsSet.add(f); });
-                
-                let distractorPool = Array.from(allFormsSet).filter(f => f && cleanAnswer(f) !== cleanAnswer(correctAnswer));
-                
-                const samePersonIndicative = getConjugation(rawInfinitive, personIndex, 'indicativo');
-                if (samePersonIndicative && cleanAnswer(samePersonIndicative) !== cleanAnswer(correctAnswer)) {
-                    distractorPool = distractorPool.filter(f => cleanAnswer(f) !== cleanAnswer(samePersonIndicative));
-                    distractorPool.unshift(samePersonIndicative);
-                }
-                if (poolName === 'disparadores' && !distractorPool.some(f => cleanAnswer(f) === cleanAnswer(infinitive))) {
-                     distractorPool.unshift(infinitive);
-                }
-
-                shuffleArray(distractorPool);
-                const selectedDistractors = distractorPool.slice(0, 3);
-                let finalOptions = [...new Set([correctAnswer, ...selectedDistractors])];
-                
-                if (finalOptions.length < 4) {
+                if (!matches) {
+                    // If parsing fails, create multiple options using a fallback method
                     const allVerbs = Object.keys(SUBJUNTIVO_MAP);
-                    const genericDistractors = new Set<string>();
-                    const otherVerbs = allVerbs.filter(v => v !== infinitive);
+                    const randomVerbs = shuffleArray([...allVerbs]).slice(0, 3);
+                    const basicOptions = [q.answer]; // Correct answer
                     
-                    while (genericDistractors.size < 20 && otherVerbs.length > 0) {
-                        const randomVerb = otherVerbs[Math.floor(Math.random() * otherVerbs.length)];
-                        const randomConjugations = getAllConjugations(randomVerb, 'subjuntivo').concat(getAllConjugations(randomVerb, 'indicativo'));
-                        randomConjugations.forEach(c => { if (c) genericDistractors.add(c); });
-                    }
-                    
-                    const genericDistractorsArray = shuffleArray(Array.from(genericDistractors));
-                    
-                    for (const distractor of genericDistractorsArray) {
-                        if (finalOptions.length >= 4) break;
-                        if (!finalOptions.some(opt => cleanAnswer(opt) === cleanAnswer(distractor))) {
-                            finalOptions.push(distractor);
+                    // Get some random conjugations as potential wrong answers
+                    for (const randomVerb of randomVerbs) {
+                        const conjugations = getAllConjugations(randomVerb, 'subjuntivo')
+                            .filter(c => c && cleanAnswer(c) !== cleanAnswer(q.answer));
+                        if (conjugations.length > 0) {
+                            const randomConjugation = conjugations[Math.floor(Math.random() * conjugations.length)];
+                            if (randomConjugation) basicOptions.push(randomConjugation);
                         }
                     }
+                    
+                    finalExercise.shuffledOptions = shuffleArray([...new Set(basicOptions)].slice(0, 4));
+                } else {
+                    const parts = matches[1].split(',').map(p => p.trim());
+                    const rawInfinitive = parts[parts.length - 1];
+                    const infinitive = rawInfinitive.replace(/se$/, '').trim();
+                    const pronoun = parts.length > 1 ? parts.slice(0, parts.length - 1).join(', ') : 'él';
+                    const personIndex = getPersonIndex(pronoun);
+
+                    const correctAnswer = getConjugation(rawInfinitive, personIndex, 'subjuntivo') || q.answer;
+                    finalAnswer = correctAnswer;
+
+                    let allFormsSet = new Set<string>();
+                    getAllConjugations(infinitive, 'indicativo').forEach(f => { if(f) allFormsSet.add(f); });
+                    getAllConjugations(infinitive, 'subjuntivo').forEach(f => { if(f) allFormsSet.add(f); });
+
+                    let distractorPool = Array.from(allFormsSet).filter(f => f && cleanAnswer(f) !== cleanAnswer(correctAnswer));
+
+                    const samePersonIndicative = getConjugation(rawInfinitive, personIndex, 'indicativo');
+                    if (samePersonIndicative && cleanAnswer(samePersonIndicative) !== cleanAnswer(correctAnswer)) {
+                        distractorPool = distractorPool.filter(f => cleanAnswer(f) !== cleanAnswer(samePersonIndicative));
+                        distractorPool.unshift(samePersonIndicative);
+                    }
+                    if (poolName === 'disparadores' && !distractorPool.some(f => cleanAnswer(f) === cleanAnswer(infinitive))) {
+                         distractorPool.unshift(infinitive);
+                    }
+
+                    shuffleArray(distractorPool);
+                    const selectedDistractors = distractorPool.slice(0, 3);
+                    let finalOptions = [...new Set([correctAnswer, ...selectedDistractors])];
+
+                    if (finalOptions.length < 4) {
+                        const allVerbs = Object.keys(SUBJUNTIVO_MAP);
+                        const genericDistractors = new Set<string>();
+                        const otherVerbs = allVerbs.filter(v => v !== infinitive);
+
+                        while (genericDistractors.size < 20 && otherVerbs.length > 0) {
+                            const randomVerb = otherVerbs[Math.floor(Math.random() * otherVerbs.length)];
+                            const randomConjugations = getAllConjugations(randomVerb, 'subjuntivo').concat(getAllConjugations(randomVerb, 'indicativo'));
+                            randomConjugations.forEach(c => { if (c) genericDistractors.add(c); });
+                        }
+
+                        const genericDistractorsArray = shuffleArray(Array.from(genericDistractors));
+
+                        for (const distractor of genericDistractorsArray) {
+                            if (finalOptions.length >= 4) break;
+                            if (!finalOptions.some(opt => cleanAnswer(opt) === cleanAnswer(distractor))) {
+                                finalOptions.push(distractor);
+                            }
+                        }
+                    }
+
+                    finalExercise.shuffledOptions = shuffleArray(finalOptions.slice(0, 4));
                 }
-                
-                finalExercise.shuffledOptions = shuffleArray(finalOptions.slice(0, 4));
 
             } else if (poolName === 'contraste') {
                 const qContraste = q as typeof questionBank.contraste[0];
@@ -149,7 +165,7 @@ export const generateQuestions = (poolName: QuestionPool, count: number, type: E
                 finalExercise.shuffledWords = shuffleArray([...(q as any).words]);
             }
         }
-        
+
         finalExercise.answer = finalAnswer;
         finalExercise.cleanedAnswer = cleanAnswer(finalAnswer);
         return finalExercise;
