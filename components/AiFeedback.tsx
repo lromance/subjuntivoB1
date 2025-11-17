@@ -3,6 +3,27 @@ import React from 'react';
 import { Attempt } from '../types';
 import Spinner from './Spinner';
 
+// Simple markdown to HTML converter
+const markdownToHtml = (text: string): string => {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold: **text** -> <strong>text</strong>
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')             // Italic: *text* -> <em>text</em>
+    .replace(/---/g, '<hr>')                          // Horizontal rule
+    .replace(/===/g, '<hr>')                          // Horizontal rule
+    .replace(/\n\n/g, '</p><p>')                     // Paragraph breaks
+    .replace(/\n/g, '<br />');                       // Line breaks
+};
+
+// Wrap content in paragraph tags if needed
+const formatFeedback = (text: string): string => {
+  let formatted = markdownToHtml(text);
+  // If there are no paragraph tags, wrap the whole content
+  if (!formatted.includes('<p>')) {
+    formatted = `<p>${formatted}</p>`;
+  }
+  return formatted;
+};
+
 interface AiFeedbackProps {
     onGetFeedback: () => void;
     feedback: string;
@@ -34,9 +55,10 @@ const AiFeedback: React.FC<AiFeedbackProps> = ({ onGetFeedback, feedback, isLoad
                         </svg>
                         Tutor IA: Diagnóstico de Errores
                     </p>
-                    <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                        {feedback}
-                    </div>
+                    <div
+                        className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{ __html: formatFeedback(feedback) }}
+                    />
                 </div>
             )}
         </div>
