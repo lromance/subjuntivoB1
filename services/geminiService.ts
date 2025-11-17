@@ -5,13 +5,19 @@ import { Attempt } from '../types';
 const getAiInstance = () => {
     const API_KEY = import.meta.env.VITE_API_KEY;
 
+    console.log("Environment variables:", import.meta.env);
+    console.log("VITE_API_KEY value:", API_KEY);
+    console.log("Type of VITE_API_KEY:", typeof API_KEY);
+
     if (!API_KEY) {
         // Handle the case where API key is not available
         console.error("API key is not set");
+        console.error("Current environment variables:", Object.keys(import.meta.env));
         // Return null or throw error based on how you want to handle this case
         return null;
         // You could show an error message to the user or disable AI features
     }
+    console.log("Creating GoogleGenAI instance with API key");
     return new GoogleGenAI({ apiKey: API_KEY });
 };
 
