@@ -34,9 +34,10 @@ const AiFeedback: React.FC<AiFeedbackProps> = ({ onGetFeedback, feedback, isLoad
                         </svg>
                         Tutor IA: Diagnóstico de Errores
                     </p>
-                    <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                        {feedback}
-                    </div>
+                    <div
+                        className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{ __html: feedback.replace(/\n/g, '<br />') }}
+                    />
                 </div>
             )}
         </div>

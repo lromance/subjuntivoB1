@@ -192,7 +192,7 @@ const Tutor: React.FC = () => {
                         <hr className="my-6 border-gray-200" />
                         <label htmlFor="answer-input" className="block mb-3 font-semibold text-gray-800">Tarea del Tutor (IA):</label>
                         <div className="ai-feedback">
-                            <p>{generatedTask}</p>
+                            <p dangerouslySetInnerHTML={{ __html: generatedTask.replace(/\n/g, '<br />').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
                         </div>
                         <textarea id="answer-input" className="input-primary mt-4" rows={3} placeholder="Escribe tu respuesta completa aquí..." value={userAnswer} onChange={e => setUserAnswer(e.target.value)} />
                         <div className="text-center">

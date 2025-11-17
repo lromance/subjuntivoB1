@@ -1,16 +1,11 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Attempt } from '../types';
 
 const getAiInstance = () => {
     const API_KEY = import.meta.env.VITE_API_KEY;
-
     if (!API_KEY) {
-        // Handle the case where API key is not available
         console.error("API key is not set");
-        // Return null or throw error based on how you want to handle this case
         return null;
-        // You could show an error message to the user or disable AI features
     }
     return new GoogleGenAI({ apiKey: API_KEY });
 };
@@ -36,7 +31,7 @@ export const getAIFeedback = async (attempts: Attempt[]): Promise<string> => {
         errorSummary += `- Respuesta Correcta: "${error.correctAnswer}"\n\n`;
     });
 
-    const systemPrompt = "Actúa como un tutor de español B1 experto, amigable y motivador. Tu objetivo es analizar los errores del estudiante. Identifica el patrón de error más frecuente (ej. 'Confunde Indicativo con Subjuntivo', 'Error en irregulares como ser/ir/haber'). Ofrece una explicación concisa (máximo 4 frases) y muy clara sobre la regla que se está fallando y un consejo práctico. Muestra ánimo al estudiante. El output debe ser solo el texto del análisis. Usa párrafos para separar ideas.";
+    const systemPrompt = "Actúa como un tutor de español B1 experto, amigable y motivador. Tu objetivo es analizar los errores del estudiante. Identifica el patrón de error más frecuente (ej. 'Confunde Indicativo con Subjuntivo', 'Error en irregulares como ser/ir/haber'). Ofrece una explicación concisa (máximo 4 frases) y muy clara sobre la regla que se está fallando y un consejo práctico. Muestra ánimo al estudiante. Usa saltos de línea para separar ideas.";
     const userQuery = `Analiza los siguientes ${errorsToSend.length} errores, identifica el patrón principal y explica la regla de forma simple:\n\n${errorSummary}`;
 
     try {
@@ -45,7 +40,7 @@ export const getAIFeedback = async (attempts: Attempt[]): Promise<string> => {
             contents: userQuery,
             systemInstruction: systemPrompt
         });
-        
+
         const text = response.text;
         if (!text) {
             throw new Error("API response missing text content.");
@@ -58,6 +53,9 @@ export const getAIFeedback = async (attempts: Attempt[]): Promise<string> => {
 };
 
 export const getTutorResponse = async (systemPrompt: string, userQuery: string, retries = 3): Promise<string> => {
+    // Ensure the system prompt requests HTML formatting
+    const formattedSystemPrompt = systemPrompt + " El output debe estar en formato HTML puro, no markdown. Usa <p> para párrafos, <br/> para saltos de línea, <strong> para texto en negrita. NO uses asteriscos, guiones ni símbolos de formato markdown. Formatea listas usando saltos de línea y números en lugar de markdown.";
+
     const ai = getAiInstance();
     if (!ai) {
         throw new Error("La funcionalidad de inteligencia artificial no está disponible actualmente. Por favor, inténtalo más tarde.");
@@ -67,7 +65,7 @@ export const getTutorResponse = async (systemPrompt: string, userQuery: string, 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: userQuery,
-            systemInstruction: systemPrompt
+            systemInstruction: formattedSystemPrompt
         });
 
         const text = response.text;
