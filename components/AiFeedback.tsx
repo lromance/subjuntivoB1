@@ -3,7 +3,7 @@ import React from 'react';
 import { Attempt } from '../types';
 import Spinner from './Spinner';
 
-// Simple markdown to HTML converter
+// Enhanced markdown to HTML converter
 const markdownToHtml = (text: string): string => {
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold: **text** -> <strong>text</strong>
@@ -11,16 +11,24 @@ const markdownToHtml = (text: string): string => {
     .replace(/---/g, '<hr>')                          // Horizontal rule
     .replace(/===/g, '<hr>')                          // Horizontal rule
     .replace(/\n\n/g, '</p><p>')                     // Paragraph breaks
-    .replace(/\n/g, '<br />');                       // Line breaks
+    .replace(/---\s*\n/g, '</p><hr><p>')             // Horizontal rule with following paragraph
+    .replace(/\n/g, '<br />')                        // Line breaks
+    .replace(/(\d+)\.\s/g, '<br />$1. ')             // Numbered list items
+    .replace(/^\s*([a-z]\.)\s/gm, '<br />$1 ');      // Lowercase lettered list items
 };
 
 // Wrap content in paragraph tags if needed
 const formatFeedback = (text: string): string => {
   let formatted = markdownToHtml(text);
-  // If there are no paragraph tags, wrap the whole content
-  if (!formatted.includes('<p>')) {
-    formatted = `<p>${formatted}</p>`;
+  // Ensure we have proper paragraph wrapping
+  if (!formatted.startsWith('<p>')) {
+    formatted = `<p>${formatted}`;
   }
+  if (!formatted.endsWith('</p>')) {
+    formatted = `${formatted}</p>`;
+  }
+  // Handle the case where we have multiple line breaks
+  formatted = formatted.replace(/<br \/><br \/>/g, '</p><p>');
   return formatted;
 };
 
