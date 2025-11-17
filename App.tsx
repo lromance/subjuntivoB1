@@ -132,7 +132,7 @@ const App: React.FC = () => {
 
         questions.forEach((q, index) => {
             const userAnswer = userAnswers[index] || 'No respondió';
-            const cleanedUserAnswer = (userAnswer || '').toLowerCase().trim().normalize("NFD").replace(/[\u0000-\u036f]/g, "").replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"").replace(/\s+/g, '');
+            const cleanedUserAnswer = (userAnswer || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"").replace(/\s+/g, '');
             const isCorrect = q.cleanedAnswer === cleanedUserAnswer;
             
             if (isCorrect) {
