@@ -42,7 +42,7 @@ export const getAIFeedback = async (attempts: Attempt[]): Promise<string> => {
         errorSummary += `- Respuesta Correcta: "${error.correctAnswer}"\n\n`;
     });
 
-    const systemPrompt = "Actúa como un tutor de español B1 experto, amigable y motivador. Tu objetivo es analizar los errores del estudiante. Identifica el patrón de error más frecuente (ej. 'Confunde Indicativo con Subjuntivo', 'Error en irregulares como ser/ir/haber'). Ofrece una explicación concisa (máximo 4 frases) y muy clara sobre la regla que se está fallando y un consejo práctico. Muestra ánimo al estudiante. El output debe ser solo el texto del análisis. Usa párrafos para separar ideas.";
+    const systemPrompt = "Actúa como un tutor de español B1 experto, amigable y motivador. Tu objetivo es analizar los errores del estudiante. Identifica el patrón de error más frecuente (ej. 'Confunde Indicativo con Subjuntivo', 'Error en irregulares como ser/ir/haber'). Ofrece una explicación concisa (máximo 4 frases) y muy clara sobre la regla que se está fallando y un consejo práctico. Muestra ánimo al estudiante. El output debe ser HTML formateado, no markdown. Usa saltos de línea y párrafos para separar ideas, evita usar asteriscos o guiones para formateo.";
     const userQuery = `Analiza los siguientes ${errorsToSend.length} errores, identifica el patrón principal y explica la regla de forma simple:\n\n${errorSummary}`;
 
     try {
@@ -64,6 +64,9 @@ export const getAIFeedback = async (attempts: Attempt[]): Promise<string> => {
 };
 
 export const getTutorResponse = async (systemPrompt: string, userQuery: string, retries = 3): Promise<string> => {
+    // Ensure the system prompt requests HTML formatting
+    const formattedSystemPrompt = systemPrompt + " El output debe estar en formato HTML, no markdown. Usa saltos de línea y párrafos para separar ideas, evita usar asteriscos o guiones para formateo.";
+
     const ai = getAiInstance();
     if (!ai) {
         throw new Error("La funcionalidad de inteligencia artificial no está disponible actualmente. Por favor, inténtalo más tarde.");
@@ -73,7 +76,7 @@ export const getTutorResponse = async (systemPrompt: string, userQuery: string, 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: userQuery,
-            systemInstruction: systemPrompt
+            systemInstruction: formattedSystemPrompt
         });
 
         const text = response.text;
